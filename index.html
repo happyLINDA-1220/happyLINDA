@@ -743,5 +743,17 @@ function storeApp() {
 }
 </script>
 
+<!-- ======================= 浮動預約按鈕（右下角） ======================= -->
+<a href="https://calendar.app.google/qJz5FMSGkhe2VMeW9"
+   target="_blank" rel="noopener noreferrer"
+   x-show="!cartOpen && !checkoutOpen" x-transition.opacity
+   aria-label="線上預約（開啟 Google 日曆預約頁面）"
+   title="線上預約"
+   class="group fixed bottom-6 right-6 z-[80] flex items-center gap-2 bg-amber hover:bg-amber-dark text-white font-medium rounded-full shadow-2xl pl-4 pr-5 py-3.5 transition-all duration-300 hover:-translate-y-1 focus:outline-none focus-visible:ring-4 focus-visible:ring-amber-light">
+  <span class="absolute inset-0 rounded-full bg-amber animate-ping opacity-30 group-hover:hidden" aria-hidden="true"></span>
+  <i class="fa-regular fa-calendar-check text-lg relative"></i>
+  <span class="relative text-sm tracking-wide">線上預約</span>
+</a>
+
 </body>
 </html>
