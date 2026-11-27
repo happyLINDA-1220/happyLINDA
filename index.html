@@ -562,6 +562,9 @@
         </div>
 
         <form @submit.prevent="submitOrder()" class="space-y-5">
+          <!-- 機器人陷阱：真人看不到，請勿刪除 -->
+          <input type="text" x-model="orderForm.website" name="website" tabindex="-1" autocomplete="off"
+                 aria-hidden="true" class="absolute -left-[9999px] w-px h-px opacity-0">
           <div>
             <p class="text-sm font-bold text-wood mb-2">取餐方式</p>
             <div class="grid grid-cols-3 gap-2">
@@ -581,12 +584,12 @@
           </div>
           <div>
             <label class="text-sm font-bold text-wood mb-1.5 block">聯絡電話</label>
-            <input required x-model="orderForm.phone" type="tel" placeholder="09xx-xxx-xxx"
+            <input required x-model="orderForm.phone" type="tel" inputmode="tel" placeholder="09xx-xxx-xxx"
                    class="w-full bg-white border border-wood/15 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-amber">
           </div>
           <div x-show="orderType === '宅配'">
             <label class="text-sm font-bold text-wood mb-1.5 block">宅配地址</label>
-            <input x-model="orderForm.address" type="text" placeholder="請輸入收件地址"
+            <input x-model="orderForm.address" :required="orderType === '宅配'" type="text" placeholder="請輸入收件地址"
                    class="w-full bg-white border border-wood/15 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-amber">
           </div>
           <div>
@@ -600,8 +603,13 @@
             <span class="font-display font-black text-xl text-amber-dark">NT$ <span x-text="cartSubtotal"></span></span>
           </div>
 
-          <button type="submit" class="w-full bg-amber hover:bg-amber-dark text-white font-bold py-3.5 rounded-full transition-colors">
-            確認送出訂單
+          <p x-show="orderError" x-text="orderError" role="alert"
+             class="text-sm text-red-700 bg-red-50 border border-red-200 rounded-xl px-4 py-2.5"></p>
+
+          <button type="submit" :disabled="submitting"
+                  class="w-full bg-amber hover:bg-amber-dark disabled:opacity-60 disabled:cursor-wait text-white font-bold py-3.5 rounded-full transition-colors">
+            <span x-show="!submitting">確認送出訂單</span>
+            <span x-show="submitting"><i class="fa-solid fa-spinner fa-spin mr-2"></i>訂單送出中…</span>
           </button>
         </form>
       </div>
@@ -615,7 +623,8 @@
         </div>
         <h3 class="font-display font-bold text-2xl text-wood mb-2">訂單已建立！</h3>
         <p class="text-ink/60 text-sm mb-1">訂單編號 #<span x-text="lastOrderId"></span></p>
-        <p class="text-ink/60 text-sm mb-7">我們已收到您的訂單，將盡快為您準備。</p>
+        <p class="text-ink/60 text-sm mb-1" x-show="lastOrderTotal">訂單金額 NT$ <span x-text="lastOrderTotal"></span></p>
+        <p class="text-ink/60 text-sm mb-7">我們已收到您的訂單，將盡快為您準備。<br>取餐時請告知訂單編號。</p>
         <button @click="closeCheckout()" class="bg-wood hover:bg-wood-dark text-cream font-bold px-8 py-3 rounded-full transition-colors">
           返回首頁
         </button>
@@ -626,6 +635,10 @@
 
 <!-- ======================= Alpine 資料與邏輯 ======================= -->
 <script>
+// 訂單送到 Google Sheets（Google Apps Script 網頁應用程式網址）；留空則為示範模式
+// 後端程式與設定步驟：gas/Code.gs、gas/README.md
+const ORDER_API_URL = 'https://script.google.com/macros/s/AKfycby1yfvAkiUesvDake1LNbIJKOF_g1vxWiUN4pNYJWCKyyxSmSbkX5pb8dQyewMT78YZ/exec';
+
 function storeApp() {
   return {
     // ---- UI 狀態 ----
@@ -643,8 +656,11 @@ function storeApp() {
     // ---- 購物車 / 訂單 ----
     cart: [],
     orderType: '內用',
-    orderForm: { name:'', phone:'', address:'', note:'' },
+    orderForm: { name:'', phone:'', address:'', note:'', website:'' },
     lastOrderId: '',
+    lastOrderTotal: 0,
+    submitting: false,
+    orderError: '',
 
     // ---- 菜單分類 ----
     menuCategories: [
@@ -753,16 +769,61 @@ function storeApp() {
     removeFromCart(idx) {
       this.cart.splice(idx, 1);
     },
-    submitOrder() {
-      this.lastOrderId = Math.floor(100000 + Math.random() * 900000);
-      this.orderSuccess = true;
+    async submitOrder() {
+      if (this.submitting) return;
+      this.orderError = '';
+      const phone = this.orderForm.phone.replace(/[^\d+]/g, '');
+      if (!/^(\+?886|0)\d{8,9}$/.test(phone)) { this.orderError = '電話格式不正確，請輸入例如 0912345678'; return; }
+      if (this.orderType === '宅配' && !this.orderForm.address.trim()) { this.orderError = '宅配請填寫收件地址'; return; }
+      if (!this.cart.length) { this.orderError = '購物車是空的'; return; }
+
+      // 尚未設定 Google Sheets 串接網址時，維持示範模式
+      if (!ORDER_API_URL) {
+        this.lastOrderId = 'DEMO-' + Math.floor(100000 + Math.random() * 900000);
+        this.lastOrderTotal = this.cartSubtotal;
+        this.orderSuccess = true;
+        return;
+      }
+
+      this.submitting = true;
+      try {
+        const res = await fetch(ORDER_API_URL, {
+          method: 'POST',
+          // 用 text/plain 送出，避免瀏覽器先發 CORS 預檢（Apps Script 不支援）
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            action: 'createOrder',
+            orderType: this.orderType,
+            name: this.orderForm.name.trim(),
+            phone: phone,
+            address: this.orderType === '宅配' ? this.orderForm.address.trim() : '',
+            note: this.orderForm.note.trim(),
+            website: this.orderForm.website,
+            items: this.cart.map(c => ({ id: c.id, qty: c.qty })),
+            clientTotal: this.cartSubtotal
+          })
+        });
+        const data = await res.json();
+        if (!data.ok) { this.orderError = data.message || '訂單送出失敗，請稍後再試'; return; }
+        this.lastOrderId = data.orderId;
+        this.lastOrderTotal = data.total;
+        this.orderSuccess = true;
+      } catch (e) {
+        this.orderError = navigator.onLine === false
+          ? '目前沒有網路連線，請連上網路後再送出'
+          : '訂單送出失敗，請稍後再試或直接來電訂購';
+      } finally {
+        this.submitting = false;
+      }
     },
     closeCheckout() {
       this.checkoutOpen = false;
       this.orderSuccess = false;
       this.cart = [];
-      this.orderForm = { name:'', phone:'', address:'', note:'' };
+      this.orderForm = { name:'', phone:'', address:'', note:'', website:'' };
       this.orderType = '內用';
+      this.orderError = '';
+      this.lastOrderTotal = 0;
     },
     subscribeNewsletter() {
       if (!this.newsletterEmail) return;

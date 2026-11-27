@@ -1,6 +1,6 @@
 // 金灶鍋貼 PWA Service Worker
 // 更新網站內容後，把版本號加 1，舊快取就會被清掉。
-const VERSION = 'jinzao-v1';
+const VERSION = 'jinzao-v2';
 const APP_SHELL = [
   './',
   './index.html',
