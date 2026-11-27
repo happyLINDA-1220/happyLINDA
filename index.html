@@ -52,7 +52,7 @@
   .nav-link{position:relative;}
   .nav-link::after{content:'';position:absolute;left:0;bottom:-4px;width:0;height:2px;background:#D97645;transition:width .3s ease;}
   .nav-link:hover::after{width:100%;}
-  /* 主視覺：無臉男來來往往動畫 */
+  /* 主視覺：鍋貼小子來來往往動畫 */
   .crowd{position:absolute;left:0;right:0;bottom:0;height:150px;overflow:hidden;pointer-events:none;z-index:5;}
   .crowd.crowd-3d{height:clamp(200px,36vh,320px);}
   .crowd.crowd-3d::after{display:none;}
@@ -67,8 +67,6 @@
   .crowd-person .limb.b{animation-delay:calc(var(--step) * -1);}
   @keyframes crowd-across{from{transform:translateX(-80px)}to{transform:translateX(calc(100vw + 80px))}}
   @keyframes crowd-swing{from{transform:rotate(24deg)}to{transform:rotate(-24deg)}}
-  .crowd-person .robe{transform-origin:20px 10px;animation:crowd-sway calc(var(--step) * 3) ease-in-out infinite alternate;}
-  @keyframes crowd-sway{from{transform:skewX(3deg)}to{transform:skewX(-3deg)}}
   @keyframes crowd-bob{from{transform:translateY(0)}to{transform:translateY(-4px)}}
 </style>
 </head>
@@ -158,7 +156,7 @@
     <div class="absolute inset-0 bg-gradient-to-r from-ink/85 via-ink/40 to-transparent"></div>
   </div>
 
-  <!-- 無臉男來來往往動畫（由頁尾 script 產生） -->
+  <!-- 鍋貼小子來來往往動畫（由頁尾 script 產生） -->
   <div id="hero-crowd" class="crowd" aria-hidden="true"></div>
 
   <div class="relative z-10 max-w-7xl mx-auto px-5 md:px-8 pb-20 md:pb-28 w-full">
@@ -776,7 +774,7 @@ function storeApp() {
   <span class="relative text-sm tracking-wide">線上預約</span>
 </a>
 
-<!-- ======================= 主視覺：無臉男 3D 動畫 ======================= -->
+<!-- ======================= 主視覺：鍋貼小子 3D 動畫 ======================= -->
 <!-- three.js：3D 繪圖；若載入失敗會自動改用 2D 版 -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
@@ -785,7 +783,7 @@ function storeApp() {
   if (!crowd) return;
   function rand(a, b) { return a + Math.random() * (b - a); }
 
-  // ---------- 3D 版：店面＋無臉男進進出出（three.js） ----------
+  // ---------- 3D 版：店面＋鍋貼小子進進出出（three.js） ----------
   function crowd3D() {
     var T = window.THREE;
     var test = document.createElement('canvas');
@@ -854,39 +852,61 @@ function storeApp() {
     doorLight.position.set(0, 1.0, FRONT + 0.9); shop.add(doorLight);
     scene.add(shop);
 
-    // ===== 無臉男 =====
-    var bodyGeo = new T.LatheGeometry([
-      new T.Vector2(0.001, 1.78), new T.Vector2(0.16, 1.75), new T.Vector2(0.26, 1.65), new T.Vector2(0.3, 1.45),
-      new T.Vector2(0.32, 1.15), new T.Vector2(0.37, 0.75), new T.Vector2(0.45, 0.32), new T.Vector2(0.5, 0.06),
-      new T.Vector2(0.46, 0.0), new T.Vector2(0.001, 0.0)
-    ], 28);
+    // ===== 原創角色「鍋貼小子」積木人偶版：方塊身體、圓柱頭、C 形手、小廚師帽 =====
     var sphereGeo = new T.SphereGeometry(1, 20, 14);
-    var shadowGeo = new T.CircleGeometry(0.5, 24);
+    var legGeo = new T.BoxGeometry(0.17, 0.44, 0.22); legGeo.translate(0, -0.22, 0);        // 以髖部為轉軸
+    var footGeo = new T.BoxGeometry(0.17, 0.08, 0.3); footGeo.translate(0, -0.4, 0.04);
+    var armGeo = new T.CylinderGeometry(0.055, 0.065, 0.34, 12); armGeo.translate(0, -0.17, 0); // 以肩膀為轉軸
+    var torsoGeo = new T.CylinderGeometry(0.2, 0.28, 0.44, 4, 1); torsoGeo.rotateY(Math.PI / 4); torsoGeo.scale(1, 1, 0.55);
+    var handGeo = new T.TorusGeometry(0.05, 0.022, 8, 16, Math.PI * 1.6);
+    var headGeo = new T.CylinderGeometry(0.15, 0.15, 0.27, 24);
+    var smileGeo = new T.TorusGeometry(0.055, 0.009, 6, 16, Math.PI * 0.8);
+    var shadowGeo = new T.CircleGeometry(0.42, 24);
 
     function makeFigure() {
       var mats = [];
-      function mat(o) { var m = new T.MeshStandardMaterial(Object.assign({ transparent: true }, o)); mats.push(m); return m; }
-      function blob(material, sx, sy, sz, x, y, z) {
-        var m = new T.Mesh(sphereGeo, material); m.scale.set(sx, sy, sz); m.position.set(x, y, z); return m;
-      }
+      function mat(o) { var m = new T.MeshStandardMaterial(Object.assign({ transparent: true, roughness: 0.35 }, o)); mats.push(m); return m; }
+      function mesh(geo, material, x, y, z) { var m = new T.Mesh(geo, material); m.position.set(x || 0, y || 0, z || 0); return m; }
+      var skin = mat({ color: 0xF6C744 }), shirt = mat({ color: 0xF7F1E6 }), apron = mat({ color: 0xD97645 }),
+          pants = mat({ color: 0x6B4631 }), dark = mat({ color: 0x2A211C }), hat = mat({ color: 0xFFFFFF, roughness: 0.6 }),
+          dumpling = mat({ color: 0xE8B26A, roughness: 0.6 });
       var fig = new T.Group();
-      var inner = new T.Group(); fig.add(inner);   // 上下浮動、搖擺用
-      inner.add(new T.Mesh(bodyGeo, mat({ color: 0x151011, roughness: 0.9, opacity: 0.94 })));
-      var white = mat({ color: 0xF4F0EA, roughness: 0.45 });
-      var purple = mat({ color: 0x9C86A8, roughness: 0.6 });
-      var dark = mat({ color: 0x2A211C, roughness: 0.6 });
-      inner.add(blob(white, 0.2, 0.27, 0.08, 0, 1.45, 0.25));        // 面具
-      [-0.08, 0.08].forEach(function (x) {
-        inner.add(blob(purple, 0.03, 0.045, 0.02, x, 1.555, 0.318)); // 眼睛上方紫紋
-        inner.add(blob(purple, 0.027, 0.07, 0.02, x, 1.385, 0.32));  // 眼睛下方紫紋
-        inner.add(blob(dark, 0.052, 0.02, 0.02, x, 1.48, 0.325));    // 眼睛
+      var inner = new T.Group(); fig.add(inner);
+      // 腳（褲子＋腳掌，一體成形）
+      var legL = mesh(legGeo, pants, -0.09, 0.48, 0), legR = mesh(legGeo, pants, 0.09, 0.48, 0);
+      legL.add(mesh(footGeo, pants)); legR.add(mesh(footGeo, pants));
+      inner.add(legL); inner.add(legR);
+      inner.add(mesh(new T.BoxGeometry(0.38, 0.1, 0.22), pants, 0, 0.53, 0));       // 腰部
+      // 梯形身體＋圍裙
+      inner.add(mesh(torsoGeo, shirt, 0, 0.8, 0));
+      inner.add(mesh(new T.BoxGeometry(0.24, 0.32, 0.02), apron, 0, 0.76, 0.115));
+      inner.add(mesh(new T.BoxGeometry(0.06, 0.12, 0.02), apron, -0.09, 0.97, 0.1));
+      inner.add(mesh(new T.BoxGeometry(0.06, 0.12, 0.02), apron, 0.09, 0.97, 0.1));
+      // 手臂＋C 形手（右手拿鍋貼）
+      function arm(x, side) {
+        var a = mesh(armGeo, shirt, x, 0.98, 0);
+        a.rotation.z = side * 0.18;
+        var h = mesh(handGeo, skin, 0, -0.39, 0.02); h.rotation.x = Math.PI / 2; a.add(h);
+        inner.add(a); return a;
+      }
+      var armL = arm(-0.26, -1), armR = arm(0.26, 1);
+      var dp = mesh(sphereGeo, dumpling, 0, -0.45, 0.05); dp.scale.set(0.09, 0.05, 0.06); armR.add(dp);
+      // 脖子＋圓柱頭＋印刷感的臉
+      inner.add(mesh(new T.CylinderGeometry(0.07, 0.07, 0.05, 12), skin, 0, 1.045, 0));
+      inner.add(mesh(headGeo, skin, 0, 1.2, 0));
+      [-0.055, 0.055].forEach(function (x) {
+        var e = mesh(sphereGeo, dark, x, 1.23, 0.145); e.scale.set(0.018, 0.026, 0.008); inner.add(e);
       });
-      inner.add(blob(dark, 0.048, 0.02, 0.02, 0, 1.3, 0.316));       // 嘴巴
+      var smile = mesh(smileGeo, dark, 0, 1.17, 0.147); smile.rotation.z = Math.PI * 1.1; inner.add(smile);
+      // 小廚師帽
+      inner.add(mesh(new T.CylinderGeometry(0.16, 0.16, 0.1, 24), hat, 0, 1.38, 0));
+      var puff = mesh(sphereGeo, hat, 0, 1.47, 0); puff.scale.set(0.19, 0.1, 0.19); inner.add(puff);
       var shadowMat = new T.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.28, depthWrite: false });
       var shadow = new T.Mesh(shadowGeo, shadowMat);
       shadow.rotation.x = -Math.PI / 2; shadow.position.y = 0.01; fig.add(shadow);
       scene.add(fig);
-      return { group: fig, inner: inner, shadow: shadow, shadowMat: shadowMat, mats: mats };
+      return { group: fig, inner: inner, shadow: shadow, shadowMat: shadowMat, mats: mats,
+               legL: legL, legR: legR, armL: armL, armR: armR };
     }
 
     var halfW = 10, shopX = 5, agents = [];
@@ -901,6 +921,7 @@ function storeApp() {
       a.state = 'walk';
       a.fade = 1;
       a.scale = rand(0.85, 1.05);
+      a.waver = Math.random() < 0.35;                         // 有些會邊走邊揮手
       // 朝店面方向走的，約一半會進店
       a.enter = (shopX - a.x) * a.dir > 0 && Math.random() < 0.5;
       a.group.scale.setScalar(a.scale);
@@ -926,7 +947,7 @@ function storeApp() {
     }
 
     function setOpacity(a, k) {
-      a.mats.forEach(function (m) { m.opacity = (m === a.mats[0] ? 0.94 : 1) * k; });
+      a.mats.forEach(function (m) { m.opacity = k; });
       a.shadowMat.opacity = 0.28 * k;
     }
 
@@ -942,8 +963,8 @@ function storeApp() {
         var g = a.group;
         if (a.state === 'walk') {
           a.x += a.dir * a.speed * dt;
-          // 稍微轉向鏡頭（3/4 側面），看得到面具
-          g.rotation.y = a.dir * Math.PI / 2 * 0.35;
+          // 3/4 側面：看得到臉，也看得出往哪走
+          g.rotation.y = a.dir * Math.PI / 2 * 0.6;
           if (a.enter && (a.x - door.x) * a.dir >= 0) { a.state = 'enter'; }
           if (Math.abs(a.x) > halfW + 5) reset(a, false);
         } else if (a.state === 'enter') {
@@ -957,11 +978,21 @@ function storeApp() {
           setOpacity(a, a.fade);
           if (a.fade <= 0) { setOpacity(a, 1); reset(a, false); }
         }
-        var bob = Math.sin(t * 2.2 + a.phase);
+        // 一蹦一跳：手腳前後擺動、身體跟著彈跳
+        var w = Math.sin(t * 7 + a.phase);
         g.position.set(a.x, 0, a.z);
-        a.inner.position.y = 0.06 + bob * 0.05;
-        a.inner.rotation.z = Math.sin(t * 1.4 + a.phase) * 0.04;
-        a.shadow.scale.setScalar(1 - bob * 0.06);
+        a.legL.rotation.x = w * 0.55;
+        a.legR.rotation.x = -w * 0.55;
+        a.armL.rotation.x = -w * 0.6;
+        if (a.waver) {
+          a.armR.rotation.x = 0; a.armR.rotation.z = 2.6 + Math.sin(t * 9 + a.phase) * 0.35;  // 舉手揮動
+        } else {
+          a.armR.rotation.x = w * 0.6; a.armR.rotation.z = 0.18;
+        }
+        var hop = Math.abs(w);
+        a.inner.position.y = hop * 0.05;
+        a.inner.rotation.z = w * 0.04;
+        a.shadow.scale.setScalar(1 - hop * 0.12);
       });
       lanterns.forEach(function (l, i) { l.rotation.z = Math.sin(t * 1.6 + i) * 0.12; });
       doorLight.intensity = 1.2 + Math.sin(t * 3) * 0.08;
@@ -987,27 +1018,30 @@ function storeApp() {
     return n;
   }
 
-  // 無臉男造型（非商業用途）：黑色半透明身體＋白色面具，緩緩飄移
+  // 原創角色「鍋貼小子」2D 版：小廚師帽＋暖橘圍裙
   function person(opts) {
     var svg = el('svg', { width: 40 * opts.scale, height: 100 * opts.scale, viewBox: '0 0 40 100' });
     var g = el('g', { 'class': 'bob' });
-    // 身體：上窄下寬、下擺會微微飄動
-    var robe = el('path', { 'class': 'robe',
-      d: 'M20 6 C29 6 31 16 31 30 C31 52 35 74 37 94 Q31 97 27 94 Q23 98 20 94 Q16 98 12 94 Q8 97 3 94 C5 74 9 52 9 30 C9 16 11 6 20 6 Z',
-      fill: '#140F0E', 'fill-opacity': 0.88, stroke: 'rgba(247,241,230,0.35)', 'stroke-width': 0.8 });
-    g.appendChild(robe);
-    // 白色面具
-    g.appendChild(el('ellipse', { cx: 20, cy: 26, rx: 7.2, ry: 10, fill: '#F4F0EA' }));
-    // 眼睛上下的紫色紋路
-    var purple = { fill: '#9C86A8' };
-    [[16.2, 21.4], [23.8, 21.4]].forEach(function (c) {
-      g.appendChild(el('ellipse', Object.assign({ cx: c[0], cy: c[1], rx: 1.6, ry: 2.4 }, purple)));
-      g.appendChild(el('ellipse', Object.assign({ cx: c[0], cy: c[1] + 7.4, rx: 1.3, ry: 3.2 }, purple)));
-    });
-    // 眼睛與嘴巴
-    g.appendChild(el('ellipse', { cx: 16.2, cy: 25, rx: 2, ry: 0.9, fill: '#2A211C' }));
-    g.appendChild(el('ellipse', { cx: 23.8, cy: 25, rx: 2, ry: 0.9, fill: '#2A211C' }));
-    g.appendChild(el('ellipse', { cx: 20, cy: 32.4, rx: 1.9, ry: 0.9, fill: '#2A211C' }));
+    function limb(cls, x1, y1, x2, y2, w, color) {
+      var l = el('line', { 'class': 'limb ' + cls, x1: x1, y1: y1, x2: x2, y2: y2, stroke: color,
+        'stroke-width': w, 'stroke-linecap': 'round' });
+      l.style.setProperty('--ox', x1 + 'px');
+      l.style.setProperty('--oy', y1 + 'px');
+      return l;
+    }
+    g.appendChild(limb('b', 18, 70, 18, 94, 6, '#F3C9A0'));   // 後腳
+    g.appendChild(limb('a', 20, 48, 20, 66, 5, '#F7F1E6'));   // 後手
+    g.appendChild(el('rect', { x: 11, y: 44, width: 18, height: 22, rx: 7, fill: '#F7F1E6' }));  // 上衣
+    g.appendChild(el('rect', { x: 14, y: 50, width: 12, height: 16, rx: 3, fill: '#D97645' }));  // 圍裙
+    g.appendChild(el('rect', { x: 11, y: 62, width: 18, height: 10, rx: 4, fill: '#6B4631' }));  // 短褲
+    g.appendChild(limb('a', 22, 70, 22, 94, 6, '#F3C9A0'));   // 前腳
+    g.appendChild(el('circle', { cx: 20, cy: 32, r: 13, fill: '#F3C9A0' }));                     // 頭
+    g.appendChild(el('rect', { x: 12, y: 14, width: 16, height: 8, rx: 2, fill: '#FFFFFF' }));   // 帽子
+    g.appendChild(el('ellipse', { cx: 20, cy: 12, rx: 11, ry: 6, fill: '#FFFFFF' }));
+    g.appendChild(el('circle', { cx: 16, cy: 32, r: 1.6, fill: '#2A211C' }));
+    g.appendChild(el('circle', { cx: 24, cy: 32, r: 1.6, fill: '#2A211C' }));
+    g.appendChild(el('path', { d: 'M17.5 37 q2.5 2 5 0', fill: 'none', stroke: '#2A211C', 'stroke-width': 1.2, 'stroke-linecap': 'round' }));
+    g.appendChild(limb('b', 20, 48, 20, 66, 5, '#F7F1E6'));   // 前手
     svg.appendChild(g);
     return svg;
   }
