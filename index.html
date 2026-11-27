@@ -6,6 +6,17 @@
 <title>金灶鍋貼 JinZao Potstickers｜金黃酥脆，傳承手藝</title>
 <meta name="description" content="金灶鍋貼：極簡現代風鍋貼專賣店，台灣在地豬肉、每日現包、黃金煎脆比例。線上點餐、冷凍禮盒、門市據點。">
 
+<!-- PWA：可安裝到手機桌面、離線瀏覽 -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#4A2F23">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="金灶鍋貼">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
 <!-- Tailwind CSS CDN -->
 <script src="https://cdn.tailwindcss.com"></script>
 <!-- Alpine.js (互動狀態管理：購物車、Tab、Accordion、Modal) -->
@@ -1070,6 +1081,15 @@ function storeApp() {
   try { ok = !!window.THREE && crowd3D(); } catch (e) { ok = false; }
   if (!ok) { crowd.classList.remove('crowd-3d'); crowd.innerHTML = ''; crowd2D(); }
 })();
+</script>
+
+<!-- PWA：註冊 Service Worker（需透過 https 或 localhost 開啟才會生效） -->
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('sw.js').catch(function () {});
+    });
+  }
 </script>
 
 </body>
