@@ -52,21 +52,21 @@
   .nav-link{position:relative;}
   .nav-link::after{content:'';position:absolute;left:0;bottom:-4px;width:0;height:2px;background:#D97645;transition:width .3s ease;}
   .nav-link:hover::after{width:100%;}
-  /* 主視覺：蒸氣小妖怪來來往往動畫 */
+  /* 主視覺：無臉男來來往往動畫 */
   .crowd{position:absolute;left:0;right:0;bottom:0;height:150px;overflow:hidden;pointer-events:none;z-index:5;}
   .crowd::after{content:'';position:absolute;left:0;right:0;bottom:0;height:2px;background:linear-gradient(90deg,transparent,rgba(247,241,230,.25),transparent);}
   .crowd-person{position:absolute;bottom:2px;left:0;animation:crowd-across var(--dur) linear var(--delay) infinite;will-change:transform;}
   .crowd-person.to-left{animation-direction:reverse;}
   .crowd-person.to-left svg{transform:scaleX(-1);}
   .crowd-person svg{display:block;overflow:visible;}
-  .crowd-person .bob{animation:crowd-bob calc(var(--step) / 2) ease-in-out infinite alternate;}
+  .crowd-person .bob{animation:crowd-bob calc(var(--step) * 2) ease-in-out infinite alternate;}
   .crowd-person .limb{transform-origin:var(--ox) var(--oy);animation:crowd-swing var(--step) ease-in-out infinite alternate;}
   .crowd-person .limb.b{animation-delay:calc(var(--step) * -1);}
   @keyframes crowd-across{from{transform:translateX(-80px)}to{transform:translateX(calc(100vw + 80px))}}
   @keyframes crowd-swing{from{transform:rotate(24deg)}to{transform:rotate(-24deg)}}
-  .crowd-person .steam{animation:crowd-steam 1.8s ease-out infinite;}
-  @keyframes crowd-steam{0%{opacity:0;transform:translateY(4px)}40%{opacity:.8}100%{opacity:0;transform:translateY(-8px)}}
-  @keyframes crowd-bob{from{transform:translateY(0)}to{transform:translateY(-2px)}}
+  .crowd-person .robe{transform-origin:20px 10px;animation:crowd-sway calc(var(--step) * 3) ease-in-out infinite alternate;}
+  @keyframes crowd-sway{from{transform:skewX(3deg)}to{transform:skewX(-3deg)}}
+  @keyframes crowd-bob{from{transform:translateY(0)}to{transform:translateY(-4px)}}
 </style>
 </head>
 
@@ -155,7 +155,7 @@
     <div class="absolute inset-0 bg-gradient-to-r from-ink/85 via-ink/40 to-transparent"></div>
   </div>
 
-  <!-- 蒸氣小妖怪來來往往動畫（由頁尾 script 產生） -->
+  <!-- 無臉男來來往往動畫（由頁尾 script 產生） -->
   <div id="hero-crowd" class="crowd" aria-hidden="true"></div>
 
   <div class="relative z-10 max-w-7xl mx-auto px-5 md:px-8 pb-20 md:pb-28 w-full">
@@ -773,7 +773,7 @@ function storeApp() {
   <span class="relative text-sm tracking-wide">線上預約</span>
 </a>
 
-<!-- ======================= 主視覺：蒸氣小妖怪動畫 ======================= -->
+<!-- ======================= 主視覺：無臉男動畫 ======================= -->
 <script>
 (function () {
   var crowd = document.getElementById('hero-crowd');
@@ -786,48 +786,35 @@ function storeApp() {
   }
   function rand(a, b) { return a + Math.random() * (b - a); }
 
-  // 原創角色「蒸氣小妖怪」：蒸氣般的白色身體、店家風格的暖橘面具、頭上冒熱氣
+  // 無臉男造型（非商業用途）：黑色半透明身體＋白色面具，緩緩飄移
   function person(opts) {
     var svg = el('svg', { width: 40 * opts.scale, height: 100 * opts.scale, viewBox: '0 0 40 100' });
     var g = el('g', { 'class': 'bob' });
-    function foot(cls, x) {
-      var l = el('line', { 'class': 'limb ' + cls, x1: x, y1: 84, x2: x, y2: 96,
-        stroke: '#EDE3D2', 'stroke-width': 6, 'stroke-linecap': 'round' });
-      l.style.setProperty('--ox', x + 'px');
-      l.style.setProperty('--oy', '84px');
-      return l;
-    }
-    g.appendChild(foot('b', 15));
-    g.appendChild(foot('a', 25));
-    // 熱氣（三縷，輪流往上飄散）
-    [13, 20, 27].forEach(function (x, i) {
-      var st = el('path', { 'class': 'steam', d: 'M' + x + ' 20 q-3 -4 0 -8 q3 -4 0 -8',
-        fill: 'none', stroke: '#F7F1E6', 'stroke-width': 2, 'stroke-linecap': 'round' });
-      st.style.animationDelay = (-i * 0.6) + 's';
-      g.appendChild(st);
+    // 身體：上窄下寬、下擺會微微飄動
+    var robe = el('path', { 'class': 'robe',
+      d: 'M20 6 C29 6 31 16 31 30 C31 52 35 74 37 94 Q31 97 27 94 Q23 98 20 94 Q16 98 12 94 Q8 97 3 94 C5 74 9 52 9 30 C9 16 11 6 20 6 Z',
+      fill: '#140F0E', 'fill-opacity': 0.88, stroke: 'rgba(247,241,230,0.35)', 'stroke-width': 0.8 });
+    g.appendChild(robe);
+    // 白色面具
+    g.appendChild(el('ellipse', { cx: 20, cy: 26, rx: 7.2, ry: 10, fill: '#F4F0EA' }));
+    // 眼睛上下的紫色紋路
+    var purple = { fill: '#9C86A8' };
+    [[16.2, 21.4], [23.8, 21.4]].forEach(function (c) {
+      g.appendChild(el('ellipse', Object.assign({ cx: c[0], cy: c[1], rx: 1.6, ry: 2.4 }, purple)));
+      g.appendChild(el('ellipse', Object.assign({ cx: c[0], cy: c[1] + 7.4, rx: 1.3, ry: 3.2 }, purple)));
     });
-    // 蓬鬆的蒸氣身體
-    var body = el('g', { fill: '#F7F1E6' });
-    body.appendChild(el('path', { d: 'M7 86 C4 68 6 48 11 38 C14 28 26 28 29 38 C34 48 36 68 33 86 Q30 90 26.5 87 Q23 91 20 87 Q17 91 13.5 87 Q10 90 7 86 Z' }));
-    body.appendChild(el('circle', { cx: 20, cy: 34, r: 13 }));
-    [[8, 58, 6], [32, 62, 6], [9, 75, 5], [31, 77, 5], [12, 44, 5], [28, 46, 5]].forEach(function (c) {
-      body.appendChild(el('circle', { cx: c[0], cy: c[1], r: c[2] }));
-    });
-    g.appendChild(body);
-    // 圓形暖橘面具：彎彎的笑眼＋小小的笑嘴
-    g.appendChild(el('circle', { cx: 20, cy: 36, r: 8.5, fill: '#D97645' }));
-    g.appendChild(el('path', { d: 'M14.5 35 q2 -2.4 4 0 M21.5 35 q2 -2.4 4 0 M17 39.5 q3 2.6 6 0',
-      fill: 'none', stroke: '#4A2F23', 'stroke-width': 1.4, 'stroke-linecap': 'round' }));
-    g.appendChild(el('circle', { cx: 14, cy: 38.5, r: 1.3, fill: '#F0A878' }));
-    g.appendChild(el('circle', { cx: 26, cy: 38.5, r: 1.3, fill: '#F0A878' }));
+    // 眼睛與嘴巴
+    g.appendChild(el('ellipse', { cx: 16.2, cy: 25, rx: 2, ry: 0.9, fill: '#2A211C' }));
+    g.appendChild(el('ellipse', { cx: 23.8, cy: 25, rx: 2, ry: 0.9, fill: '#2A211C' }));
+    g.appendChild(el('ellipse', { cx: 20, cy: 32.4, rx: 1.9, ry: 0.9, fill: '#2A211C' }));
     svg.appendChild(g);
     return svg;
   }
 
   // 兩個景深：遠景（小、慢、淡）與近景（大、快、亮）
   var layers = [
-    { count: 7, scale: [0.55, 0.7], dur: [40, 58], opacity: 0.45 },
-    { count: 6, scale: [0.95, 1.25], dur: [24, 34], opacity: 0.85 }
+    { count: 6, scale: [0.6, 0.75], dur: [45, 65], opacity: 0.6 },
+    { count: 5, scale: [1.0, 1.3], dur: [30, 42], opacity: 0.95 }
   ];
   layers.forEach(function (layer) {
     for (var i = 0; i < layer.count; i++) {
